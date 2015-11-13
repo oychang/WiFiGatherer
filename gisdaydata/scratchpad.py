@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import csv
+from glob import glob
 
 rows = ['id', 'unixms', 'lat', 'lon', 'bssid', 'ssid', 'level', 'speed',
         'accuracy', 'bearing']
@@ -43,3 +44,30 @@ with open('filtered.csv') as f:
 #        writer = csv.writer(f)
 #        for row in grouping:
 #            writer.writerow(row)
+
+# do connectivity analysis
+for fn in glob('group?.csv'):
+    with open(fn) as f:
+        gdata = [row for row in csv.reader(f)]
+    tindex = rows.index('unixms')
+    bindex = rows.index('bssid')
+    bssids_by_time = []
+    last_time = gdata[0][tindex]
+    last_time_bssids = set()
+    for row in gdata:
+        if row[tindex] != last_time:
+            bssids_by_time.append(last_time_bssids)
+            last_time_bssids = set()
+            last_time = row[tindex]
+        last_time_bssids.add(row[bindex])
+    print('{} {}'.format(len(bssids_by_time), fn))
+    # do max speed analysis
+    #print(max([float(row[rows.index('speed')]) for row in gdata]))
+
+    flow = 0
+    for i, period in enumerate(bssids_by_time[1:]):
+        if len(bssids_by_time[i-1] & period) == 0:
+            print('failed intersection at {}'.format(flow))
+            flow = 0
+        else:
+            flow += 1
