@@ -8,6 +8,12 @@ rows = ['id', 'unixms', 'lat', 'lon', 'bssid', 'ssid', 'level', 'speed',
 with open('filtered.csv') as f:
     data = [row for row in csv.reader(f)]
 
+# strip all rows except lat/lon
+with open('filtered_lonlat.csv', 'w') as f:
+    writer = csv.writer(f)
+    for row in data:
+        writer.writerow([row[rows.index('lon')], row[rows.index('lat')]])
+
 # find no of unique ap
 #unique_aps = set([row[rows.index('bssid')] for row in data])
 #print(len(unique_aps))
@@ -46,28 +52,28 @@ with open('filtered.csv') as f:
 #            writer.writerow(row)
 
 # do connectivity analysis
-for fn in glob('group?.csv'):
-    with open(fn) as f:
-        gdata = [row for row in csv.reader(f)]
-    tindex = rows.index('unixms')
-    bindex = rows.index('bssid')
-    bssids_by_time = []
-    last_time = gdata[0][tindex]
-    last_time_bssids = set()
-    for row in gdata:
-        if row[tindex] != last_time:
-            bssids_by_time.append(last_time_bssids)
-            last_time_bssids = set()
-            last_time = row[tindex]
-        last_time_bssids.add(row[bindex])
-    print('{} {}'.format(len(bssids_by_time), fn))
-    # do max speed analysis
-    #print(max([float(row[rows.index('speed')]) for row in gdata]))
-
-    flow = 0
-    for i, period in enumerate(bssids_by_time[1:]):
-        if len(bssids_by_time[i-1] & period) == 0:
-            print('failed intersection at {}'.format(flow))
-            flow = 0
-        else:
-            flow += 1
+#for fn in glob('group?.csv'):
+#    with open(fn) as f:
+#        gdata = [row for row in csv.reader(f)]
+#    tindex = rows.index('unixms')
+#    bindex = rows.index('bssid')
+#    bssids_by_time = []
+#    last_time = gdata[0][tindex]
+#    last_time_bssids = set()
+#    for row in gdata:
+#        if row[tindex] != last_time:
+#            bssids_by_time.append(last_time_bssids)
+#            last_time_bssids = set()
+#            last_time = row[tindex]
+#        last_time_bssids.add(row[bindex])
+#    print('{} {}'.format(len(bssids_by_time), fn))
+#    # do max speed analysis
+#    #print(max([float(row[rows.index('speed')]) for row in gdata]))
+#
+#    flow = 0
+#    for i, period in enumerate(bssids_by_time[1:]):
+#        if len(bssids_by_time[i-1] & period) == 0:
+#            print('failed intersection at {}'.format(flow))
+#            flow = 0
+#        else:
+#            flow += 1
