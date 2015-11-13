@@ -15,15 +15,15 @@ with open('filtered.csv') as f:
 #        writer.writerow([row[rows.index('lon')], row[rows.index('lat')]])
 
 # find bbox data
-north, south, east, west = float(data[0][2]), float(data[0][2]), float(data[0][3]), float(data[0][3])
-for row in data:
-    lat = float(row[rows.index('lat')])
-    lon = float(row[rows.index('lon')])
-    north = max(north, lat)
-    south = min(south, lat)
-    east = max(east, lon)
-    west = min(west, lon)
-print('{} {} {} {}'.format(north, west, south, east))
+#north, south, east, west = float(data[0][2]), float(data[0][2]), float(data[0][3]), float(data[0][3])
+#for row in data:
+#    lat = float(row[rows.index('lat')])
+#    lon = float(row[rows.index('lon')])
+#    north = max(north, lat)
+#    south = min(south, lat)
+#    east = max(east, lon)
+#    west = min(west, lon)
+#print('{} {} {} {}'.format(north, west, south, east))
 
 # find no of unique ap
 #unique_aps = set([row[rows.index('bssid')] for row in data])
@@ -88,3 +88,20 @@ print('{} {} {} {}'.format(north, west, south, east))
 #            flow = 0
 #        else:
 #            flow += 1
+
+# generate data for graph viz
+for fn in glob('group?.csv'):
+    with open(fn) as f:
+        gdata = [row for row in csv.reader(f)]
+    towrite = []
+    flat, flon = gdata[0][rows.index('lat')], gdata[0][rows.index('lon')]
+    for row in gdata:
+        lat, lon = row[rows.index('lat')], row[rows.index('lon')]
+        if lat != flat or lon != flon:
+            towrite.append([flat, flon, lat, lon])
+            flat, flon = lat, lon
+    with open(fn + 'graph.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['flat', 'flon', 'tlat', 'tlon'])
+        for row in towrite:
+            writer.writerow(row)
