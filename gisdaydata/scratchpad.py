@@ -9,10 +9,21 @@ with open('filtered.csv') as f:
     data = [row for row in csv.reader(f)]
 
 # strip all rows except lat/lon
-with open('filtered_lonlat.csv', 'w') as f:
-    writer = csv.writer(f)
-    for row in data:
-        writer.writerow([row[rows.index('lon')], row[rows.index('lat')]])
+#with open('filtered_lonlat.csv', 'w') as f:
+#    writer = csv.writer(f)
+#    for row in data:
+#        writer.writerow([row[rows.index('lon')], row[rows.index('lat')]])
+
+# find bbox data
+north, south, east, west = float(data[0][2]), float(data[0][2]), float(data[0][3]), float(data[0][3])
+for row in data:
+    lat = float(row[rows.index('lat')])
+    lon = float(row[rows.index('lon')])
+    north = max(north, lat)
+    south = min(south, lat)
+    east = max(east, lon)
+    west = min(west, lon)
+print('{} {} {} {}'.format(north, west, south, east))
 
 # find no of unique ap
 #unique_aps = set([row[rows.index('bssid')] for row in data])
