@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import csv
 from glob import glob
+from operator import itemgetter
 
 rows = ['id', 'unixms', 'lat', 'lon', 'bssid', 'ssid', 'level', 'speed',
         'accuracy', 'bearing']
@@ -90,18 +91,53 @@ with open('filtered.csv') as f:
 #            flow += 1
 
 # generate data for graph viz
+#for fn in glob('group?.csv'):
+#    with open(fn) as f:
+#        gdata = [row for row in csv.reader(f)]
+#    towrite = []
+#    flat, flon = gdata[0][rows.index('lat')], gdata[0][rows.index('lon')]
+#    for row in gdata:
+#        lat, lon = row[rows.index('lat')], row[rows.index('lon')]
+#        if lat != flat or lon != flon:
+#            towrite.append([flat, flon, lat, lon])
+#            flat, flon = lat, lon
+#    with open(fn + 'graph.csv', 'w') as f:
+#        writer = csv.writer(f)
+#        writer.writerow(['flat', 'flon', 'tlat', 'tlon'])
+#        for row in towrite:
+#            writer.writerow(row)
+
+# do speed choke point analysis
+allchokes = []
 for fn in glob('group?.csv'):
     with open(fn) as f:
         gdata = [row for row in csv.reader(f)]
+    tindex = rows.index('unixms')
+    sindex = rows.index('speed')
+
+    speed_delta = 0
+    last_time = gdata[0][tindex]
     towrite = []
-    flat, flon = gdata[0][rows.index('lat')], gdata[0][rows.index('lon')]
-    for row in gdata:
-        lat, lon = row[rows.index('lat')], row[rows.index('lon')]
-        if lat != flat or lon != flon:
-            towrite.append([flat, flon, lat, lon])
-            flat, flon = lat, lon
-    with open(fn + 'graph.csv', 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(['flat', 'flon', 'tlat', 'tlon'])
-        for row in towrite:
-            writer.writerow(row)
+    for i, row in enumerate(gdata):
+        if row[tindex] != last_time:
+            speed_delta = float(row[sindex]) - float(gdata[i-1][sindex])
+            last_time = row[tindex]
+            if speed_delta != 0:
+                towrite.append(row + [speed_delta])
+
+    towrite[0][-1] = None if towrite[0][-1] >= 0 else towrite[0][-1]
+    for i, row in enumerate(towrite[1:]):
+        prev = towrite[i-1][-1]
+        if row[-1] >= 0:
+            row[-1] = None
+        elif prev is not None and row[-1] < 0 and prev < 0:
+            row[-1] = row[-1] + prev
+            towrite[i-1][-1] = None
+    towrite = [row for row in towrite if row[-1] is not None]
+    allchokes += sorted(towrite, key=itemgetter(len(rows)))[:4]
+
+with open('chokepoints.csv', 'w') as f:
+    writer = csv.writer(f)
+    writer.writerow(rows + ['speedchange'])
+    for row in allchokes:
+        writer.writerow(row)
